@@ -1,0 +1,298 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# FlyRank.ai Internship Task Document Analyzer\n",
+    "\n",
+    "**Project Type:** Python / AI Document Processing  \n",
+    "**Platform:** Google Colab  \n",
+    "\n",
+    "**Description:**  \n",
+    "This project is developed for organizing and processing PDF documents related to internship tasks.\n",
+    "\n",
+    "> **IMPORTANT:**  \n",
+    "> The PDF files used in this project are **ONLY** internship task documents. They are included for task documentation, learning, reference, and personal project organization. No confidential company information or unrelated documents are intentionally included."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Install Required Libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip -q install pypdf"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Import Libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "from pathlib import Path\n",
+    "from pypdf import PdfReader\n",
+    "from google.colab import files"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Project Configuration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "PROJECT_NAME = \"FlyRank.ai Internship Task Analyzer\"\n",
+    "\n",
+    "DATA_DIR = Path(\"/content/internship_tasks\")\n",
+    "DATA_DIR.mkdir(parents=True, exist_ok=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Upload Internship Task PDFs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(\"=\" * 70)\n",
+    "print(PROJECT_NAME)\n",
+    "print(\"=\" * 70)\n",
+    "\n",
+    "print(\"\\nUpload ONLY the internship task PDF files.\\n\")\n",
+    "\n",
+    "uploaded_files = files.upload()\n",
+    "\n",
+    "for filename in uploaded_files:\n",
+    "    if filename.lower().endswith(\".pdf\"):\n",
+    "        source = Path(filename)\n",
+    "        destination = DATA_DIR / source.name\n",
+    "        source.rename(destination)\n",
+    "        print(f\"✓ Added: {filename}\")\n",
+    "    else:\n",
+    "        print(f\"⚠ Skipped non-PDF file: {filename}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Find PDF Documents"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pdf_files = sorted(DATA_DIR.glob(\"*.pdf\"))\n",
+    "\n",
+    "print(\"\\n\" + \"=\" * 70)\n",
+    "print(\"INTERNSHIP TASK DOCUMENTS\")\n",
+    "print(\"=\" * 70)\n",
+    "\n",
+    "print(f\"\\nTotal PDF files: {len(pdf_files)}\\n\")\n",
+    "\n",
+    "for index, pdf in enumerate(pdf_files, start=1):\n",
+    "    size_mb = pdf.stat().st_size / (1024 * 1024)\n",
+    "    print(\n",
+    "        f\"{index:02d}. {pdf.name} \"\n",
+    "        f\"| Size: {size_mb:.2f} MB\"\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 6. Extract Text from PDFs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def extract_pdf_text(pdf_path):\n",
+    "    \"\"\"\n",
+    "    Extract text from a PDF document.\n",
+    "\n",
+    "    Parameters\n",
+    "    ----------\n",
+    "    pdf_path : Path\n",
+    "        Path to the PDF file.\n",
+    "\n",
+    "    Returns\n",
+    "    -------\n",
+    "    str\n",
+    "        Extracted text.\n",
+    "    \"\"\"\n",
+    "    reader = PdfReader(str(pdf_path))\n",
+    "    text = []\n",
+    "    for page in reader.pages:\n",
+    "        page_text = page.extract_text()\n",
+    "        if page_text:\n",
+    "            text.append(page_text)\n",
+    "    return \"\\n\".join(text)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 7. Analyze Internship Documents"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "document_data = []\n",
+    "\n",
+    "for pdf in pdf_files:\n",
+    "    try:\n",
+    "        text = extract_pdf_text(pdf)\n",
+    "        pages = len(PdfReader(str(pdf)).pages)\n",
+    "        document_data.append({\n",
+    "            \"filename\": pdf.name,\n",
+    "            \"pages\": pages,\n",
+    "            \"characters\": len(text),\n",
+    "            \"words\": len(text.split()),\n",
+    "            \"status\": \"Processed\"\n",
+    "        })\n",
+    "    except Exception as error:\n",
+    "        document_data.append({\n",
+    "            \"filename\": pdf.name,\n",
+    "            \"pages\": 0,\n",
+    "            \"characters\": 0,\n",
+    "            \"words\": 0,\n",
+    "            \"status\": f\"Error: {error}\"\n",
+    "        })"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 8. Display Analysis Results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(\"\\n\" + \"=\" * 70)\n",
+    "print(\"DOCUMENT ANALYSIS\")\n",
+    "print(\"=\" * 70)\n",
+    "\n",
+    "for document in document_data:\n",
+    "    print(f\"\\nDocument: {document['filename']}\")\n",
+    "    print(f\"Pages: {document['pages']}\")\n",
+    "    print(f\"Words: {document['words']}\")\n",
+    "    print(f\"Characters: {document['characters']}\")\n",
+    "    print(f\"Status: {document['status']}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 9. Generate Project Summary"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "total_pages = sum(\n",
+    "    document[\"pages\"]\n",
+    "    for document in document_data\n",
+    ")\n",
+    "\n",
+    "total_words = sum(\n",
+    "    document[\"words\"]\n",
+    "    for document in document_data\n",
+    ")\n",
+    "\n",
+    "print(\"\\n\" + \"=\" * 70)\n",
+    "print(\"PROJECT SUMMARY\")\n",
+    "print(\"=\" * 70)\n",
+    "\n",
+    "print(f\"\"\"\n",
+    "Project:\n",
+    "    {PROJECT_NAME}\n",
+    "\n",
+    "Document Type:\n",
+    "    Internship Task PDFs\n",
+    "\n",
+    "Total Documents:\n",
+    "    {len(pdf_files)}\n",
+    "\n",
+    "Total Pages:\n",
+    "    {total_pages}\n",
+    "\n",
+    "Total Words:\n",
+    "    {total_words}\n",
+    "\n",
+    "Processing:\n",
+    "    PDF text extraction and document analysis\n",
+    "\n",
+    "Purpose:\n",
+    "    Internship task documentation, learning,\n",
+    "    reference, and organization.\n",
+    "\n",
+    "NOTE:\n",
+    "    The documents included in this project are ONLY\n",
+    "    internship task PDFs.\n",
+    "\"\"\")\n",
+    "\n",
+    "print(\"=\" * 70)\n",
+    "print(\"Processing completed successfully.\")\n",
+    "print(\"=\" * 70)"
+   ]
+  }
+ ],
+ "metadata": {
+  "language_info": {
+   "name": "python"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
