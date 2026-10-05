@@ -1,0 +1,223 @@
+# ================================================================
+# FlyRank.ai Internship Task Document Analyzer
+# ================================================================
+#
+# Project Type: Python / AI Document Processing
+# Platform: Google Colab
+#
+# Description:
+# This project is developed for organizing and processing PDF
+# documents related to internship tasks.
+#
+# IMPORTANT:
+# The PDF files used in this project are ONLY internship task
+# documents. They are included for task documentation, learning,
+# reference, and personal project organization.
+#
+# No confidential company information or unrelated documents
+# are intentionally included.
+# ================================================================
+
+
+# ------------------------------------------------
+# 1. Install Required Libraries
+# ------------------------------------------------
+
+!pip -q install pypdf
+
+
+# ------------------------------------------------
+# 2. Import Libraries
+# ------------------------------------------------
+
+import os
+from pathlib import Path
+from pypdf import PdfReader
+from google.colab import files
+
+
+# ------------------------------------------------
+# 3. Project Configuration
+# ------------------------------------------------
+
+PROJECT_NAME = "FlyRank.ai Internship Task Analyzer"
+
+DATA_DIR = Path("/content/internship_tasks")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# ------------------------------------------------
+# 4. Upload Internship Task PDFs
+# ------------------------------------------------
+
+print("=" * 70)
+print(PROJECT_NAME)
+print("=" * 70)
+
+print("\nUpload ONLY the internship task PDF files.\n")
+
+uploaded_files = files.upload()
+
+for filename in uploaded_files:
+    if filename.lower().endswith(".pdf"):
+        source = Path(filename)
+        destination = DATA_DIR / source.name
+        source.rename(destination)
+        print(f"✓ Added: {filename}")
+    else:
+        print(f"⚠ Skipped non-PDF file: {filename}")
+
+
+# ------------------------------------------------
+# 5. Find PDF Documents
+# ------------------------------------------------
+
+pdf_files = sorted(DATA_DIR.glob("*.pdf"))
+
+print("\n" + "=" * 70)
+print("INTERNSHIP TASK DOCUMENTS")
+print("=" * 70)
+
+print(f"\nTotal PDF files: {len(pdf_files)}\n")
+
+for index, pdf in enumerate(pdf_files, start=1):
+
+    size_mb = pdf.stat().st_size / (1024 * 1024)
+
+    print(
+        f"{index:02d}. {pdf.name} "
+        f"| Size: {size_mb:.2f} MB"
+    )
+
+
+# ------------------------------------------------
+# 6. Extract Text from PDFs
+# ------------------------------------------------
+
+def extract_pdf_text(pdf_path):
+    """
+    Extract text from a PDF document.
+
+    Parameters
+    ----------
+    pdf_path : Path
+        Path to the PDF file.
+
+    Returns
+    -------
+    str
+        Extracted text.
+    """
+
+    reader = PdfReader(str(pdf_path))
+
+    text = []
+
+    for page in reader.pages:
+        page_text = page.extract_text()
+
+        if page_text:
+            text.append(page_text)
+
+    return "\n".join(text)
+
+
+# ------------------------------------------------
+# 7. Analyze Internship Documents
+# ------------------------------------------------
+
+document_data = []
+
+for pdf in pdf_files:
+
+    try:
+
+        text = extract_pdf_text(pdf)
+
+        pages = len(PdfReader(str(pdf)).pages)
+
+        document_data.append({
+            "filename": pdf.name,
+            "pages": pages,
+            "characters": len(text),
+            "words": len(text.split()),
+            "status": "Processed"
+        })
+
+    except Exception as error:
+
+        document_data.append({
+            "filename": pdf.name,
+            "pages": 0,
+            "characters": 0,
+            "words": 0,
+            "status": f"Error: {error}"
+        })
+
+
+# ------------------------------------------------
+# 8. Display Analysis Results
+# ------------------------------------------------
+
+print("\n" + "=" * 70)
+print("DOCUMENT ANALYSIS")
+print("=" * 70)
+
+for document in document_data:
+
+    print(f"\nDocument: {document['filename']}")
+    print(f"Pages: {document['pages']}")
+    print(f"Words: {document['words']}")
+    print(f"Characters: {document['characters']}")
+    print(f"Status: {document['status']}")
+
+
+# ------------------------------------------------
+# 9. Generate Project Summary
+# ------------------------------------------------
+
+total_pages = sum(
+    document["pages"]
+    for document in document_data
+)
+
+total_words = sum(
+    document["words"]
+    for document in document_data
+)
+
+print("\n" + "=" * 70)
+print("PROJECT SUMMARY")
+print("=" * 70)
+
+print(f"""
+Project:
+    {PROJECT_NAME}
+
+Document Type:
+    Internship Task PDFs
+
+Total Documents:
+    {len(pdf_files)}
+
+Total Pages:
+    {total_pages}
+
+Total Words:
+    {total_words}
+
+Processing:
+    PDF text extraction and document analysis
+
+Purpose:
+    Internship task documentation, learning,
+    reference, and organization.
+
+NOTE:
+    The documents included in this project are ONLY
+    internship task PDFs.
+""")
+
+print("=" * 70)
+print("Processing completed successfully.")
+print("=" * 70)
